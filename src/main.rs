@@ -1,11 +1,14 @@
+use std::num::Int;
 use std::os;
 use std::io::File;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
+use std::iter::range_step;
 
-
-fn search(needle: String, haystack: Vec<char>) -> Option<(usize, usize)> {
+fn search(needle: String, haystack: Vec<char>) -> Vec<(usize, i64)> {
     let needle: Vec<char> = needle.chars().collect();
+    let len_needle = needle.len() as i64;
+    let mut results : Vec<(usize, i64)> = Vec::new();
 
     let mut indexed_haystack = HashMap::new();
     for (idx, c) in haystack.iter().enumerate() {
@@ -21,13 +24,13 @@ fn search(needle: String, haystack: Vec<char>) -> Option<(usize, usize)> {
             possible_starts = *entries;
         },
         None => {
-            return None;
+            return results;
         }
     }
 
     let second_pos: &Vec<usize>;
     match indexed_haystack.get(&needle[1]) {
-        None => { return None; }
+        None => { return results; }
         Some(ref entries) => {
             second_pos = *entries;
         }
@@ -35,22 +38,29 @@ fn search(needle: String, haystack: Vec<char>) -> Option<(usize, usize)> {
     let mut possible_steps: Vec<(usize, usize)> = Vec::new();
     for first_pos in possible_starts.iter() {
         for second_pos in second_pos.iter() {
-            if first_pos < second_pos {
+            let start = *first_pos;
+            let step: i64 = (*second_pos as i64) - (*first_pos as i64);
+            let positions: Vec<i64> = range_step(start as i64, step*len_needle, step).collect();
+            println!("Start {} step {}", start, step);
+            if positions.iter().any(|&x| { x<0 }) {
+                // TODO there's probably a better maths way to do this
+                continue;
+            }
 
-                let start = *first_pos;
-                let step = *second_pos - *first_pos;
-
-                if haystack.iter().skip(start).enumerate().filter(|&(idx, _)| { idx % step == 0 }).map(|(_, char)| { char })
-                        .zip(needle.iter())
-                        .all(|(&x, &y)| { x == y }) {
-                    return Some((start, step));
-                }
+            println!("Range {:?}", positions);
+            if positions.iter().enumerate().all(|(needle_idx, haystack_idx)| { needle[needle_idx] == haystack[haystack_idx] } ) {
+                println!("Found starting at {} with step of {}", start, step);
+                results.push((start, step));
             }
         }
     }
 
 
-    None
+    results
+}
+
+fn positions<T: Int>(start: T, step: T, len: T) -> Vec<T> {
+    range(Int::zero(), len).map(|i| { start + step*i } ).collect()
 }
 
 fn main() {
@@ -60,8 +70,7 @@ fn main() {
 
     let needle = (&os::args()[2]).to_string();
     println!("Looking for {}", needle);
-    match search(needle, haystack) {
-        None => { println!("Not found"); }
-        Some((start, step)) => { println!("Found starting at {} with step of {}", start, step); }
+    for &(start, step) in search(needle, haystack).iter() {
+        println!("Found starting at {} with step of {}", start, step);
     }
 }
