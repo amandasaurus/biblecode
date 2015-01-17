@@ -99,7 +99,7 @@ fn search(needle: String, haystack: Vec<char>) -> Vec<(usize, i64)> {
             debug!("Start {} step {}", start, step);
             if positions.iter().any(|&x| { x<0 }) {
                 // TODO there's probably a better maths way to do this
-                break;
+                continue;
             }
             let positions: Vec<usize> = positions.iter().map(|&x| { FromPrimitive::from_i64(x).unwrap() }).collect();
             debug!("positions {:?}", positions);
