@@ -80,15 +80,15 @@ fn search(needle: String, haystack: Vec<char>) -> Vec<(usize, i64)> {
         }
     }
 
-    let second_pos: &Vec<usize>;
+    let second_poses: &Vec<usize>;
     match indexed_haystack.get(&needle[1]) {
         None => { return results; }
         Some(ref entries) => {
-            second_pos = *entries;
+            second_poses = *entries;
         }
     }
     for first_pos in possible_starts.iter() {
-        for second_pos in second_pos.iter() {
+        for second_pos in second_poses.iter() {
             debug!("first_pos {} second_pos {}", first_pos, second_pos);
             let start = *first_pos;
             let step: i64 = (*second_pos as i64) - (*first_pos as i64);
@@ -109,6 +109,7 @@ fn search(needle: String, haystack: Vec<char>) -> Vec<(usize, i64)> {
             }
 
             if positions[positions.len()-1] > len_haystack - 1 {
+                debug!("Past end");
                 break;
             }
             if positions.iter().map(|&c| { &haystack[c] }).zip(needle.iter()).all(|(&a, &b)| { a == b }) {
