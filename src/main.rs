@@ -11,8 +11,10 @@ struct EDS {
     needle: Vec<char>,
     haystack: Vec<char>,
     indexed_haystack: HashMap<char, Vec<usize>>,
-    first_pos: Vec<usize>,
-    second_pos: Vec<usize>,
+    first_poses: Vec<usize>,
+    first_poses_idx: usize,
+    second_poses: Vec<usize>,
+    second_poses_idx: usize,
 }
 
 
@@ -24,34 +26,48 @@ impl Iterator for EDS {
     }
 }
 
-impl EDS {
-    fn find_first_second_pos(&mut self) {
-        self.indexed_haystack = HashMap::new();
-        for (idx, &c) in self.haystack.iter().enumerate() {
-            match self.indexed_haystack.entry(c) {
-                Vacant(entry) => { entry.insert(vec![idx]); },
-                Occupied(mut entry) => { (*entry.get_mut()).push(idx); }
-            }
+fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
+    let mut indexed_haystack = HashMap::new();
+    for (idx, &c) in input.iter().enumerate() {
+        match indexed_haystack.entry(c) {
+            Vacant(entry) => { entry.insert(vec![idx]); },
+            Occupied(mut entry) => { (*entry.get_mut()).push(idx); }
         }
-
-        match self.indexed_haystack.get(&self.needle[0]) {
-            Some(ref entries) => {
-                self.first_pos = (**entries).clone();
-            },
-            None => {
-                self.first_pos = vec![];
-                return
-            }
-        }
-
-        match self.indexed_haystack.get(&self.needle[1]) {
-            None => { self.second_pos = vec![]; }
-            Some(ref entries) => {
-                self.second_pos = (**entries).clone();
-            }
-        }
-
     }
+
+    indexed_haystack
+}
+
+impl EDS {
+    fn new(needle: Vec<char>, haystack: Vec<char>) -> Option<EDS> {
+        let indexed_haystack = index_chars(&haystack);
+
+        let first_poses;
+        match indexed_haystack.get(&needle[0]) {
+            None => { return None ; }
+            Some(ref entries) => {
+                first_poses = (**entries).clone();
+            }
+        }
+
+        let second_poses;
+        match indexed_haystack.get(&needle[1]) {
+            None => { return None ; }
+            Some(ref entries) => {
+                second_poses = (**entries).clone();
+            }
+        }
+                
+        let result = EDS {
+            needle: needle, haystack: haystack,
+            indexed_haystack: indexed_haystack,
+            first_poses: first_poses, second_poses: second_poses,
+            first_poses_idx: 0, second_poses_idx: 0,
+        };
+
+        Some(result)
+    }
+
 }
 
 
