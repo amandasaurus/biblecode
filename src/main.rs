@@ -178,8 +178,8 @@ fn main() {
         None => {
             println!("Cannot look for this string");
         }
-        Some(ref mut eds_searcher) => {
-            for (start, step) in *eds_searcher {
+        Some(eds_searcher) => {
+            for (start, step) in (eds_searcher).take(10) {
                 println!("Found starting at {} with step of {}", start, step);
             }
         }
