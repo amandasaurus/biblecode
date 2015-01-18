@@ -22,16 +22,27 @@ impl Iterator for EDS {
     type Item = (usize, i64);
 
     fn next(&mut self) -> Option<(usize, i64)> {
+        debug!("Start of next call");
         let len_first_poses = self.first_poses.len();
         let len_second_poses = self.second_poses.len();
+        
+        if self.first_poses_idx == len_first_poses {
+            debug!("Reached end, finishing");
+            // reached the end
+            return None;
+        }
+
         let len_needle = self.needle.len();
         let len_haystack = self.haystack.len();
         let mut have_done_one_loop = false;
+        let first_run = (self.first_poses_idx == 0 && self.second_poses_idx == 0);
 
         loop {
+            debug!("Start of loop");
             // Starts off at 0/0, and we don't want to increment it the first time
             if ! (self.first_poses_idx == 0 && self.second_poses_idx == 0 && !have_done_one_loop) {
-                if self.second_poses_idx == len_second_poses {
+                debug!("Incrementing counters");
+                if self.second_poses_idx == len_second_poses - 1 {
                     self.second_poses_idx = 0;
                     self.first_poses_idx += 1;
                 } else{
@@ -39,7 +50,13 @@ impl Iterator for EDS {
                 }
             }
             have_done_one_loop = true;
+            if self.first_poses_idx == len_first_poses {
+                debug!("Reached end, finishing");
+                // reached the end
+                return None;
+            }
 
+            debug!("first_poses_idx {} second_poses_idx {}", self.first_poses_idx, self.second_poses_idx);
             let first_pos = self.first_poses[self.first_poses_idx];
             let second_pos = self.second_poses[self.second_poses_idx];
             debug!("first_pos {} second_pos {}", first_pos, second_pos);
@@ -64,7 +81,7 @@ impl Iterator for EDS {
 
             if positions[positions.len()-1] > len_haystack - 1 {
                 debug!("Past end");
-                break;
+                continue;
             }
             if positions.iter().map(|&c| { &self.haystack[c] }).zip(self.needle.iter()).all(|(&a, &b)| { a == b }) {
                 //println!("Found starting at {} with step of {}", first_pos, step);
@@ -121,8 +138,8 @@ impl EDS {
 
 
 
-fn only_alphanumeric(input: Vec<char>) -> Vec<char> {
-    input.iter().filter(|&c| { c.is_alphabetic() }).map(|&c| { c.to_lowercase() }).collect()
+fn only_alphanumeric(input: String) -> Vec<char> {
+    input.chars().filter(|c| { c.is_alphabetic() }).map(|c| { c.to_lowercase() }).collect()
 }
 
 //fn only_constants(input: Vec<char>) -> Vec<char> {
@@ -132,14 +149,12 @@ fn only_alphanumeric(input: Vec<char>) -> Vec<char> {
 fn main() {
     let file_to_search = &os::args()[1];
     println!("Reading in {}", file_to_search);
-    let haystack: Vec<char> = File::open(&Path::new(file_to_search)).read_to_string().unwrap().chars().filter(|&x| { x.is_alphabetic() }).map(|x| { x.to_lowercase() }).collect();
-
-
+    let haystack: Vec<char> = only_alphanumeric(File::open(&Path::new(file_to_search)).read_to_string().unwrap());
         
 
     let needle = (&os::args()[2]).to_string();
     println!("Looking for {}", needle);
-    let needle: Vec<char> = needle.chars().collect();
+    let needle = only_alphanumeric(needle);
 
     let eds_searcher: EDS;
     match EDS::new(needle, haystack) {
