@@ -22,6 +22,55 @@ impl Iterator for EDS {
     type Item = (usize, i64);
 
     fn next(&mut self) -> Option<(usize, i64)> {
+        let len_first_poses = self.first_poses.len();
+        let len_second_poses = self.second_poses.len();
+        let len_needle = self.needle.len();
+        let len_haystack = self.haystack.len();
+        let mut have_done_one_loop = false;
+
+        loop {
+            // Starts off at 0/0, and we don't want to increment it the first time
+            if ! (self.first_poses_idx == 0 && self.second_poses_idx == 0 && !have_done_one_loop) {
+                if self.second_poses_idx == len_second_poses {
+                    self.second_poses_idx = 0;
+                    self.first_poses_idx += 1;
+                } else{
+                    self.second_poses_idx += 1;
+                }
+            }
+            have_done_one_loop = true;
+
+            let first_pos = self.first_poses[self.first_poses_idx];
+            let second_pos = self.second_poses[self.second_poses_idx];
+            debug!("first_pos {} second_pos {}", first_pos, second_pos);
+
+            let step: i64 = (second_pos as i64) - (first_pos as i64);
+            if step == 1 {
+                continue;
+            }
+            let positions: Vec<i64> = std::iter::count(first_pos as i64, step as i64).take(len_needle).collect();
+            //let positions: Vec<i64> = range_step(first_pos as i64, step*len_needle, step).collect();
+            debug!("Start {} step {}", first_pos, step);
+            if positions.iter().any(|&x| { x<0 }) {
+                // TODO there's probably a better maths way to do this
+                continue;
+            }
+            let positions: Vec<usize> = positions.iter().map(|&x| { FromPrimitive::from_i64(x).unwrap() }).collect();
+            debug!("positions {:?}", positions);
+            if positions.len() == 0 {
+                // WTF
+                continue;
+            }
+
+            if positions[positions.len()-1] > len_haystack - 1 {
+                debug!("Past end");
+                break;
+            }
+            if positions.iter().map(|&c| { &self.haystack[c] }).zip(self.needle.iter()).all(|(&a, &b)| { a == b }) {
+                //println!("Found starting at {} with step of {}", first_pos, step);
+                return Some((first_pos, step));
+            }
+        }
         None
     }
 }
@@ -156,9 +205,24 @@ fn main() {
     println!("Reading in {}", file_to_search);
     let haystack: Vec<char> = File::open(&Path::new(file_to_search)).read_to_string().unwrap().chars().filter(|&x| { x.is_alphabetic() }).map(|x| { x.to_lowercase() }).collect();
 
+
+        
+
     let needle = (&os::args()[2]).to_string();
     println!("Looking for {}", needle);
-    for &(start, step) in search(needle, haystack).iter() {
-        println!("Found starting at {} with step of {}", start, step);
+    let needle: Vec<char> = needle.chars().collect();
+
+    let eds_searcher: EDS;
+    match EDS::new(needle, haystack) {
+        None => {
+            println!("Cannot look for this string");
+        }
+        Some(ref mut eds_searcher) => {
+            for (start, step) in *eds_searcher {
+                println!("Found starting at {} with step of {}", start, step);
+            }
+        }
     }
+
+
 }
