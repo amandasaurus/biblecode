@@ -7,10 +7,15 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::iter::range_step;
 
-struct EDS {
-    needle: Vec<char>,
+struct InputSource {
     haystack: Vec<char>,
     indexed_haystack: HashMap<char, Vec<usize>>,
+}
+
+struct EDS<'a> {
+    source: &'a InputSource,
+
+    needle: Vec<char>,
     first_poses: Vec<usize>,
     first_poses_idx: usize,
     second_poses: Vec<usize>,
@@ -18,7 +23,7 @@ struct EDS {
 }
 
 
-impl Iterator for EDS {
+impl<'a> Iterator for EDS<'a> {
     type Item = (usize, i64);
 
     fn next(&mut self) -> Option<(usize, i64)> {
@@ -33,7 +38,7 @@ impl Iterator for EDS {
         }
 
         let len_needle = self.needle.len();
-        let len_haystack = self.haystack.len();
+        let len_haystack = self.source.haystack.len();
         let mut have_done_one_loop = false;
         let first_run = (self.first_poses_idx == 0 && self.second_poses_idx == 0);
 
@@ -83,7 +88,7 @@ impl Iterator for EDS {
                 debug!("Past end");
                 continue;
             }
-            if positions.iter().map(|&c| { &self.haystack[c] }).zip(self.needle.iter()).all(|(&a, &b)| { a == b }) {
+            if positions.iter().map(|&c| { &self.source.haystack[c] }).zip(self.needle.iter()).all(|(&a, &b)| { a == b }) {
                 //println!("Found starting at {} with step of {}", first_pos, step);
                 return Some((first_pos, step));
             }
@@ -104,12 +109,25 @@ fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
     indexed_haystack
 }
 
-impl EDS {
-    fn new(needle: Vec<char>, haystack: Vec<char>) -> Option<EDS> {
+impl InputSource {
+    fn new(haystack: Vec<char>) -> InputSource {
         let indexed_haystack = index_chars(&haystack);
 
+        InputSource {
+            haystack: haystack,
+            indexed_haystack: indexed_haystack,
+        }
+    }
+
+    fn search_for(&mut self, needle: Vec<char>) -> Option<EDS> {
+        EDS::new(self, needle)
+    }
+}
+
+impl<'a> EDS<'a> {
+    fn new(source: &InputSource, needle: Vec<char>) -> Option<EDS> {
         let first_poses;
-        match indexed_haystack.get(&needle[0]) {
+        match source.indexed_haystack.get(&needle[0]) {
             None => { return None ; }
             Some(ref entries) => {
                 first_poses = (**entries).clone();
@@ -117,23 +135,22 @@ impl EDS {
         }
 
         let second_poses;
-        match indexed_haystack.get(&needle[1]) {
+        match source.indexed_haystack.get(&needle[1]) {
             None => { return None ; }
             Some(ref entries) => {
                 second_poses = (**entries).clone();
             }
         }
-                
+
         let result = EDS {
-            needle: needle, haystack: haystack,
-            indexed_haystack: indexed_haystack,
+            needle: needle, source: source,
             first_poses: first_poses, second_poses: second_poses,
             first_poses_idx: 0, second_poses_idx: 0,
         };
 
-        Some(result)
-    }
+        return Some(result);
 
+    }
 }
 
 
@@ -150,14 +167,14 @@ fn main() {
     let file_to_search = &os::args()[1];
     println!("Reading in {}", file_to_search);
     let haystack: Vec<char> = only_alphanumeric(File::open(&Path::new(file_to_search)).read_to_string().unwrap());
+    let source = InputSource::new(haystack);
         
 
     let needle = (&os::args()[2]).to_string();
     println!("Looking for {}", needle);
     let needle = only_alphanumeric(needle);
 
-    let eds_searcher: EDS;
-    match EDS::new(needle, haystack) {
+    match EDS::new(&source, needle) {
         None => {
             println!("Cannot look for this string");
         }
