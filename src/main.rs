@@ -5,27 +5,62 @@ use std::os;
 use std::io::File;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::iter::range_step;
+use std::iter::{range_step, count};
 
+// Index source
 struct InputSource {
     haystack: Vec<char>,
     indexed_haystack: HashMap<char, Vec<usize>>,
 }
 
+fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
+    let mut indexed_haystack = HashMap::new();
+    for (idx, &c) in input.iter().enumerate() {
+        match indexed_haystack.entry(c) {
+            Vacant(entry) => { entry.insert(vec![idx]); },
+            Occupied(mut entry) => { (*entry.get_mut()).push(idx); }
+        }
+    }
+
+    indexed_haystack
+}
+
+impl InputSource {
+    fn new(haystack: Vec<char>) -> InputSource {
+        let indexed_haystack = index_chars(&haystack);
+
+        InputSource {
+            haystack: haystack,
+            indexed_haystack: indexed_haystack,
+        }
+    }
+
+    fn search_for(&self, needle: Vec<char>) -> Option<EDS> {
+        EDS::new(self, needle)
+    }
+}
+
+// This is a struct for doing the searching
 struct EDS<'a> {
     source: &'a InputSource,
 
+    // String to search for
     needle: Vec<char>,
+
     first_poses: Vec<usize>,
-    first_poses_idx: usize,
     second_poses: Vec<usize>,
+
+    // keep track of state between runs
+    first_poses_idx: usize,
     second_poses_idx: usize,
 }
 
 
 impl<'a> Iterator for EDS<'a> {
+    // (start, offset)
     type Item = (usize, i64);
 
+    // This actually does the searching
     fn next(&mut self) -> Option<(usize, i64)> {
         debug!("Start of next call");
         let len_first_poses = self.first_poses.len();
@@ -97,32 +132,6 @@ impl<'a> Iterator for EDS<'a> {
     }
 }
 
-fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
-    let mut indexed_haystack = HashMap::new();
-    for (idx, &c) in input.iter().enumerate() {
-        match indexed_haystack.entry(c) {
-            Vacant(entry) => { entry.insert(vec![idx]); },
-            Occupied(mut entry) => { (*entry.get_mut()).push(idx); }
-        }
-    }
-
-    indexed_haystack
-}
-
-impl InputSource {
-    fn new(haystack: Vec<char>) -> InputSource {
-        let indexed_haystack = index_chars(&haystack);
-
-        InputSource {
-            haystack: haystack,
-            indexed_haystack: indexed_haystack,
-        }
-    }
-
-    fn search_for(&mut self, needle: Vec<char>) -> Option<EDS> {
-        EDS::new(self, needle)
-    }
-}
 
 impl<'a> EDS<'a> {
     fn new(source: &InputSource, needle: Vec<char>) -> Option<EDS> {
@@ -153,15 +162,23 @@ impl<'a> EDS<'a> {
     }
 }
 
+fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
+    let total_rows = len + 2;
+    let width: usize = 31; // 15 + 1 + 15
+    let start_i = start as i64;
+    
+    for row_num in range(0, len as i64) {
+        println!("{}", count(row_num*step + start_i - 15, 1).take(width).map(|i| { source.haystack[i as usize] }).collect::<String>());
+    }
+
+    
+
+}
 
 
 fn only_alphanumeric(input: String) -> Vec<char> {
     input.chars().filter(|c| { c.is_alphabetic() }).map(|c| { c.to_lowercase() }).collect()
 }
-
-//fn only_constants(input: Vec<char>) -> Vec<char> {
-    //input.filter(|&c| { c.is_alphabetic() && ! ( c }).collect()
-//}
 
 fn main() {
     let file_to_search = &os::args()[1];
@@ -173,14 +190,16 @@ fn main() {
     let needle = (&os::args()[2]).to_string();
     println!("Looking for {}", needle);
     let needle = only_alphanumeric(needle);
+    let len_needle = needle.len();
 
-    match EDS::new(&source, needle) {
+    match source.search_for(needle) {
         None => {
             println!("Cannot look for this string");
         }
         Some(eds_searcher) => {
-            for (start, step) in (eds_searcher).take(10) {
+            for (start, step) in (eds_searcher).take(5) {
                 println!("Found starting at {} with step of {}", start, step);
+                print_results(&source, start, step, len_needle);
             }
         }
     }
