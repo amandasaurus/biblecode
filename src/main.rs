@@ -35,17 +35,17 @@ impl InputSource {
         }
     }
 
-    fn search_for(&self, needle: Vec<char>) -> Option<EDS> {
+    fn search_for<'a>(&'a self, needle: &'a Vec<char>) -> Option<EDS> {
         EDS::new(self, needle)
     }
 }
 
 // This is a struct for doing the searching
-struct EDS<'a> {
+struct EDS<'a, 'b> {
     source: &'a InputSource,
 
     // String to search for
-    needle: Vec<char>,
+    needle: &'b Vec<char>,
 
     first_poses: Vec<usize>,
     second_poses: Vec<usize>,
@@ -56,7 +56,7 @@ struct EDS<'a> {
 }
 
 
-impl<'a> Iterator for EDS<'a> {
+impl<'a, 'b> Iterator for EDS<'a, 'b> {
     // (start, offset)
     type Item = (usize, i64);
 
@@ -133,8 +133,8 @@ impl<'a> Iterator for EDS<'a> {
 }
 
 
-impl<'a> EDS<'a> {
-    fn new(source: &InputSource, needle: Vec<char>) -> Option<EDS> {
+impl<'a, 'b> EDS<'a, 'b> {
+    fn new(source: &'a InputSource, needle: &'b Vec<char>) -> Option<EDS<'a, 'b>> {
         let first_poses;
         match source.indexed_haystack.get(&needle[0]) {
             None => { return None ; }
@@ -163,12 +163,12 @@ impl<'a> EDS<'a> {
 }
 
 fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
-    let total_rows = len + 2;
+    let total_rows = (len + 2) as i64;
     let width: usize = 31; // 15 + 1 + 15
     let start_i = start as i64;
     
-    for row_num in range(0, len as i64) {
-        println!("{}", count(row_num*step + start_i - 15, 1).take(width).map(|i| { source.haystack[i as usize] }).collect::<String>());
+    for row_num in range(0, total_rows) {
+        println!("{}", count((row_num-1)*step + start_i - 15, 1).take(width).map(|i| { if i < 0 { ' ' } else { source.haystack[i as usize] } }).collect::<String>());
     }
 
     
@@ -192,14 +192,31 @@ fn main() {
     let needle = only_alphanumeric(needle);
     let len_needle = needle.len();
 
-    match source.search_for(needle) {
+    let needle2 = (&os::args()[3]).to_string();
+    println!("Looking also for {}", needle2);
+    let needle2 = only_alphanumeric(needle2);
+    let len_needle2 = needle2.len();
+
+    match source.search_for(&needle) {
         None => {
             println!("Cannot look for this string");
         }
         Some(eds_searcher) => {
-            for (start, step) in (eds_searcher).take(5) {
+            for (start, step) in eds_searcher.take(10) {
                 println!("Found starting at {} with step of {}", start, step);
                 print_results(&source, start, step, len_needle);
+                // now try to find the second needle2
+                match source.search_for(&needle2) {
+                    None => {
+                        println!("Cannot look for {:?}", needle2);
+                    }
+                    Some(needle2_searcher) => {
+                        for (start2, step2) in needle2_searcher.take(1) {
+                            println!("Found {:?} starting at {} with step of {}", needle2, start2, step2);
+
+                        }
+                    }
+                }
             }
         }
     }
