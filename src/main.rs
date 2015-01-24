@@ -7,6 +7,10 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::iter::{range_step, count};
 
+fn vec_to_string(input: &Vec<char>) -> String {
+    input.iter().map(|&c| { c }).collect()
+}
+
 // Index source
 struct InputSource {
     haystack: Vec<char>,
@@ -208,11 +212,11 @@ fn main() {
                 // now try to find the second needle2
                 match source.search_for(&needle2) {
                     None => {
-                        println!("Cannot look for {:?}", needle2);
+                        println!("Cannot look for {:?}", vec_to_string(&needle2));
                     }
                     Some(needle2_searcher) => {
                         for (start2, step2) in needle2_searcher.take(1) {
-                            println!("Found {:?} starting at {} with step of {}", needle2, start2, step2);
+                            println!("Found {:?} starting at {} with step of {}", vec_to_string(&needle2), start2, step2);
 
                         }
                     }
