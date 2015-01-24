@@ -139,6 +139,9 @@ impl<'a, 'b> Iterator for EDS<'a, 'b> {
 
 impl<'a, 'b> EDS<'a, 'b> {
     fn new(source: &'a InputSource, needle: &'b Vec<char>) -> Option<EDS<'a, 'b>> {
+        if needle.len() < 3 {
+            return None;
+        }
         let first_poses;
         match source.indexed_haystack.get(&needle[0]) {
             None => { return None ; }
