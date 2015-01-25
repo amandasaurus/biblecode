@@ -1,5 +1,9 @@
 #[macro_use] extern crate log;
 
+extern crate ansi_term;
+use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::Style::Plain;
+
 use std::num::{Int, FromPrimitive};
 use std::os;
 use std::io::File;
@@ -39,7 +43,11 @@ impl InputSource {
         }
     }
 
-    fn search_for<'a>(&'a self, needle: &'a Vec<char>) -> Option<EDS> {
+    fn search_for_anywhere<'a>(&'a self, needle: &'a Vec<char>) -> Option<EDS> {
+        EDS::new(self, needle)
+    }
+
+    fn search_for<'a>(&'a self, needle: &'a Vec<char>, start_options: Vec<usize>, step_options: Vec<i64>) -> Option<EDS> {
         EDS::new(self, needle)
     }
 }
@@ -57,6 +65,8 @@ struct EDS<'a, 'b> {
     // keep track of state between runs
     first_poses_idx: usize,
     second_poses_idx: usize,
+
+    
 }
 
 
@@ -173,9 +183,19 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
     let total_rows = (len + 2) as i64;
     let width: usize = 31; // 15 + 1 + 15
     let start_i = start as i64;
-    
+
     for row_num in range(0, total_rows) {
-        println!("{}", count((row_num-1)*step + start_i - 15, 1).take(width).map(|i| { if i < 0 { ' ' } else { source.haystack[i as usize] } }).collect::<String>());
+        for idx in range(0, width as i64) {
+            let source_idx = (row_num-1)*step + start_i - 15 + idx;
+            let this_char = if source_idx < 0 { ' ' } else { source.haystack[source_idx as usize] };
+            if idx == 15 && row_num != 0 && row_num != total_rows -1 {
+                print!("{}", Red.paint(this_char.to_string().as_slice()));
+            } else {
+                print!("{}", Plain.paint(this_char.to_string().as_slice()));
+            }
+        }
+        print!("\n");
+
     }
 
     
@@ -204,7 +224,7 @@ fn main() {
     let needle2 = only_alphanumeric(needle2);
     let len_needle2 = needle2.len();
 
-    match source.search_for(&needle) {
+    match source.search_for_anywhere(&needle) {
         None => {
             println!("Cannot look for this string");
         }
@@ -213,7 +233,7 @@ fn main() {
                 println!("Found starting at {} with step of {}", start, step);
                 print_results(&source, start, step, len_needle);
                 // now try to find the second needle2
-                match source.search_for(&needle2) {
+                match source.search_for_anywhere(&needle2) {
                     None => {
                         println!("Cannot look for {:?}", vec_to_string(&needle2));
                     }
