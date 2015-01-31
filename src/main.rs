@@ -219,10 +219,17 @@ fn main() {
     let needle = only_alphanumeric(needle);
     let len_needle = needle.len();
 
-    let needle2 = (&os::args()[3]).to_string();
-    println!("Looking also for {}", needle2);
-    let needle2 = only_alphanumeric(needle2);
-    let len_needle2 = needle2.len();
+    let has_second_arg = os::args().len() == 4;
+    let needle2;
+    let len_needle2;
+    if has_second_arg {
+        needle2 = only_alphanumeric((&os::args()[3]).to_string());
+        let needle2_string: String = vec_to_string(&needle2);
+        println!("Looking also for {}", needle2_string);
+        len_needle2 = needle2.len();
+    } else {
+        needle2 = vec![];
+    }
 
     match source.search_for_anywhere(&needle) {
         None => {
@@ -232,15 +239,17 @@ fn main() {
             for (start, step) in eds_searcher.take(10) {
                 println!("Found starting at {} with step of {}", start, step);
                 print_results(&source, start, step, len_needle);
-                // now try to find the second needle2
-                match source.search_for_anywhere(&needle2) {
-                    None => {
-                        println!("Cannot look for {:?}", vec_to_string(&needle2));
-                    }
-                    Some(needle2_searcher) => {
-                        for (start2, step2) in needle2_searcher.take(1) {
-                            println!("Found {:?} starting at {} with step of {}", vec_to_string(&needle2), start2, step2);
+                if has_second_arg {
+                    // now try to find the second needle2
+                    match source.search_for_anywhere(&needle2) {
+                        None => {
+                            println!("Cannot look for {:?}", vec_to_string(&needle2));
+                        }
+                        Some(needle2_searcher) => {
+                            for (start2, step2) in needle2_searcher.take(1) {
+                                println!("Found {:?} starting at {} with step of {}", vec_to_string(&needle2), start2, step2);
 
+                            }
                         }
                     }
                 }
