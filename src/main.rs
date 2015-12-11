@@ -9,13 +9,14 @@ use num::traits::Num;
 
 use std::os;
 use std::fs::File;
+use std::io::*;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 //use std::iter::{count};
 //use std::iter::range_step;
 
-fn step_by<T: Num>(start: T, step: T, len: usize) -> Vec<T> {
-    let result: Vec<T> = Vec::with_capacity(len);
+fn step_by<T: Num+Copy>(start: T, step: T, len: usize) -> Vec<T> {
+    let mut result: Vec<T> = Vec::with_capacity(len);
     let mut curr = start;
     for i in 1..len {
         result.push(curr);
@@ -204,9 +205,9 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
             let source_idx = (row_num-1)*step + start_i - 15 + idx;
             let this_char = if source_idx < 0 { ' ' } else { source.haystack[source_idx as usize] };
             if idx == 15 && row_num != 0 && row_num != total_rows -1 {
-                print!("{}", Red.paint(this_char.to_string().as_slice()));
+                print!("{}", Red.paint(this_char.to_string()));
             } else {
-                print!("{}", Style::default().paint(this_char.to_string().as_slice()));
+                print!("{}", Style::default().paint(this_char.to_string()));
             }
         }
         print!("\n");
@@ -219,26 +220,29 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
 
 
 fn only_alphanumeric(input: String) -> Vec<char> {
-    input.chars().filter(|c| { c.is_alphabetic() }).map(|c| { c.to_lowercase() }).collect()
+    input.chars().filter(|c| { c.is_alphabetic() }).map(|c| { c.to_lowercase().next().unwrap() }).collect()
 }
 
 fn main() {
-    let file_to_search = &std::env::args()[1];
+    let args: Vec<_> = std::env::args().collect();
+    let file_to_search = &args[1];
     println!("Reading in {}", file_to_search);
-    let haystack: Vec<char> = only_alphanumeric(File::open(file_to_search).read_to_string().unwrap());
+    let mut file_contents: String = String::new();
+    File::open(file_to_search).unwrap().read_to_string(&mut file_contents);
+    let haystack: Vec<char> = only_alphanumeric(file_contents);
     let source = InputSource::new(haystack);
         
 
-    let needle = (&std::env::args()[2]).to_string();
+    let needle = (&args[2]).to_string();
     println!("Looking for {}", needle);
     let needle = only_alphanumeric(needle);
     let len_needle = needle.len();
 
-    let has_second_arg = std::env::args().len() == 4;
+    let has_second_arg = args.len() == 4;
     let needle2;
     let len_needle2;
     if has_second_arg {
-        needle2 = only_alphanumeric((&std::env::args()[3]).to_string());
+        needle2 = only_alphanumeric((&args[3]).to_string());
         let needle2_string: String = vec_to_string(&needle2);
         println!("Looking also for {}", needle2_string);
         len_needle2 = needle2.len();
