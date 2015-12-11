@@ -8,7 +8,6 @@ use ansi_term::Style;
 extern crate num;
 use num::traits::Num;
 
-use std::os;
 use std::fs::File;
 use std::io::*;
 use std::collections::HashMap;
@@ -66,6 +65,10 @@ impl InputSource {
 
     fn search_for<'a>(&'a self, needle: &'a Vec<char>, start_options: Vec<usize>, step_options: Vec<i64>) -> Option<EDS> {
         EDS::new(self, needle)
+    }
+
+    fn source_len(&self) -> usize {
+        self.haystack.len()
     }
 }
 
@@ -200,11 +203,12 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
     let total_rows = (len + 2) as i64;
     let width: usize = 31; // 15 + 1 + 15
     let start_i = start as i64;
+    let source_len = source.source_len();
 
     for row_num in 0..total_rows {
         for idx in 0..(width as i64) {
             let source_idx = (row_num-1)*step + start_i - 15 + idx;
-            let this_char = if source_idx < 0 { ' ' } else { source.haystack[source_idx as usize] };
+            let this_char = if (source_idx < 0) || source_idx >= source_len as i64 { ' ' } else { source.haystack[source_idx as usize] };
             if idx == 15 && row_num != 0 && row_num != total_rows -1 {
                 print!("{}", Red.paint(this_char.to_string()));
             } else {
@@ -214,6 +218,7 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
         print!("\n");
 
     }
+    print!("\n");
 
     
 
