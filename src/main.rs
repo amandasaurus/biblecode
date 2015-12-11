@@ -1,3 +1,4 @@
+#![feature(rustc_private)]
 #[macro_use] extern crate log;
 
 extern crate ansi_term;
@@ -18,7 +19,7 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 fn step_by<T: Num+Copy>(start: T, step: T, len: usize) -> Vec<T> {
     let mut result: Vec<T> = Vec::with_capacity(len);
     let mut curr = start;
-    for i in 1..len {
+    for i in 1..len+1 {
         result.push(curr);
         curr = curr + step;
     }
@@ -282,4 +283,5 @@ fn main() {
 #[test]
 fn test_step_by() {
     assert_eq!(step_by(10, 2, 3), vec![10, 12, 14]);
+    assert_eq!(step_by(10, -1, 3), vec![10, 9, 8]);
 }
