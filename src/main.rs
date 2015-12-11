@@ -4,7 +4,7 @@ extern crate ansi_term;
 use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use ansi_term::Style::Plain;
 
-use std::num::{Int, FromPrimitive};
+use std::num::{FromPrimitive};
 use std::os;
 use std::io::File;
 use std::collections::HashMap;
