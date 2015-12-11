@@ -4,12 +4,27 @@ extern crate ansi_term;
 use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
 use ansi_term::Style;
 
-use std::num::{FromPrimitive};
+extern crate num;
+use num::traits::Num;
+
 use std::os;
-use std::io::File;
+use std::fs::File;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::iter::{range_step, count};
+//use std::iter::{count};
+//use std::iter::range_step;
+
+fn step_by<T: Num>(start: T, step: T, len: usize) -> Vec<T> {
+    let result: Vec<T> = Vec::with_capacity(len);
+    let mut curr = start;
+    for i in 1..len {
+        result.push(curr);
+        curr = curr + step;
+    }
+    result
+}
+        
+
 
 fn vec_to_string(input: &Vec<char>) -> String {
     input.iter().map(|&c| { c }).collect()
@@ -119,14 +134,14 @@ impl<'a, 'b> Iterator for EDS<'a, 'b> {
             if step == 1 {
                 continue;
             }
-            let positions: Vec<i64> = std::iter::count(first_pos as i64, step as i64).take(len_needle).collect();
+            let positions: Vec<i64> = step_by(first_pos as i64, step, len_needle);
             //let positions: Vec<i64> = range_step(first_pos as i64, step*len_needle, step).collect();
             debug!("Start {} step {}", first_pos, step);
             if positions.iter().any(|&x| { x<0 }) {
                 // TODO there's probably a better maths way to do this
                 continue;
             }
-            let positions: Vec<usize> = positions.iter().map(|&x| { FromPrimitive::from_i64(x).unwrap() }).collect();
+            let positions: Vec<usize> = positions.iter().map(|&x| {  x as usize }).collect();
             debug!("positions {:?}", positions);
             if positions.len() == 0 {
                 // WTF
@@ -184,8 +199,8 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
     let width: usize = 31; // 15 + 1 + 15
     let start_i = start as i64;
 
-    for row_num in range(0, total_rows) {
-        for idx in range(0, width as i64) {
+    for row_num in 0..total_rows {
+        for idx in 0..(width as i64) {
             let source_idx = (row_num-1)*step + start_i - 15 + idx;
             let this_char = if source_idx < 0 { ' ' } else { source.haystack[source_idx as usize] };
             if idx == 15 && row_num != 0 && row_num != total_rows -1 {
@@ -208,22 +223,22 @@ fn only_alphanumeric(input: String) -> Vec<char> {
 }
 
 fn main() {
-    let file_to_search = &os::args()[1];
+    let file_to_search = &std::env::args()[1];
     println!("Reading in {}", file_to_search);
-    let haystack: Vec<char> = only_alphanumeric(File::open(&Path::new(file_to_search)).read_to_string().unwrap());
+    let haystack: Vec<char> = only_alphanumeric(File::open(file_to_search).read_to_string().unwrap());
     let source = InputSource::new(haystack);
         
 
-    let needle = (&os::args()[2]).to_string();
+    let needle = (&std::env::args()[2]).to_string();
     println!("Looking for {}", needle);
     let needle = only_alphanumeric(needle);
     let len_needle = needle.len();
 
-    let has_second_arg = os::args().len() == 4;
+    let has_second_arg = std::env::args().len() == 4;
     let needle2;
     let len_needle2;
     if has_second_arg {
-        needle2 = only_alphanumeric((&os::args()[3]).to_string());
+        needle2 = only_alphanumeric((&std::env::args()[3]).to_string());
         let needle2_string: String = vec_to_string(&needle2);
         println!("Looking also for {}", needle2_string);
         len_needle2 = needle2.len();
@@ -258,4 +273,9 @@ fn main() {
     }
 
 
+}
+
+#[test]
+fn test_step_by() {
+    assert_eq!(step_by(10, 2, 3), vec![10, 12, 14]);
 }

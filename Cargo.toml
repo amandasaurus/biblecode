@@ -4,5 +4,8 @@ name = "biblecode"
 version = "0.0.1"
 authors = ["Rory McCann <rory@technomancy.org>"]
 
+[dependencies]
+num = "*"
+
 [dependencies.ansi_term]
 git = "https://github.com/ogham/rust-ansi-term.git"
