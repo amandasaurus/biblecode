@@ -89,7 +89,7 @@ impl<'a, 'b> Iterator for EDS<'a, 'b> {
         let len_needle = self.needle.len();
         let len_haystack = self.source.haystack.len();
         let mut have_done_one_loop = false;
-        let first_run = (self.first_poses_idx == 0 && self.second_poses_idx == 0);
+        let first_run = self.first_poses_idx == 0 && self.second_poses_idx == 0;
 
         loop {
             debug!("Start of loop");
