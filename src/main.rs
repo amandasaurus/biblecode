@@ -2,7 +2,7 @@
 
 extern crate ansi_term;
 use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
-use ansi_term::Style::Plain;
+use ansi_term::Style;
 
 use std::num::{FromPrimitive};
 use std::os;
@@ -191,7 +191,7 @@ fn print_results(source: &InputSource, start: usize, step: i64, len: usize) {
             if idx == 15 && row_num != 0 && row_num != total_rows -1 {
                 print!("{}", Red.paint(this_char.to_string().as_slice()));
             } else {
-                print!("{}", Plain.paint(this_char.to_string().as_slice()));
+                print!("{}", Style::default().paint(this_char.to_string().as_slice()));
             }
         }
         print!("\n");
