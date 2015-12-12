@@ -290,3 +290,10 @@ fn test_step_by() {
     assert_eq!(step_by(10, 2, 3), vec![10, 12, 14]);
     assert_eq!(step_by(10, -1, 3), vec![10, 9, 8]);
 }
+
+#[test]
+fn test_only_alphanumeric() {
+    assert_eq!(only_alphanumeric("hello there".to_string()), "hellothere".chars().collect::<Vec<char>>());
+    assert_eq!(only_alphanumeric("hello there 123".to_string()), "hellothere".chars().collect::<Vec<char>>());
+    assert_eq!(only_alphanumeric("HELLO there 123".to_string()), "hellothere".chars().collect::<Vec<char>>());
+}
