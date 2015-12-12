@@ -2,7 +2,7 @@
 #[macro_use] extern crate log;
 
 extern crate ansi_term;
-use ansi_term::Colour::{Black, Red, Green, Yellow, Blue, Purple, Cyan, Fixed};
+use ansi_term::Colour::Red;
 use ansi_term::Style;
 
 extern crate num;
@@ -18,7 +18,7 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 fn step_by<T: Num+Copy>(start: T, step: T, len: usize) -> Vec<T> {
     let mut result: Vec<T> = Vec::with_capacity(len);
     let mut curr = start;
-    for i in 1..len+1 {
+    for _ in 1..len+1 {
         result.push(curr);
         curr = curr + step;
     }
