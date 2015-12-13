@@ -3,6 +3,8 @@
 name = "biblecode"
 version = "0.0.1"
 authors = ["Rory McCann <rory@technomancy.org>"]
+license = "AGPL-1.0"
+repository = "https://github.com/rory/biblecode"
 
 [dependencies]
 num = "*"
