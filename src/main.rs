@@ -12,9 +12,8 @@ use std::fs::File;
 use std::io::*;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-//use std::iter::{count};
-//use std::iter::range_step;
 
+/// Returns a Vec, of `len` numbers from `start`, stepping by `step`.
 fn step_by<T: Num+Copy>(start: T, step: T, len: usize) -> Vec<T> {
     let mut result: Vec<T> = Vec::with_capacity(len);
     let mut curr = start;
@@ -27,16 +26,21 @@ fn step_by<T: Num+Copy>(start: T, step: T, len: usize) -> Vec<T> {
         
 
 
+/// Converts a Vec<char> into a String
 fn vec_to_string(input: &Vec<char>) -> String {
     input.iter().map(|&c| { c }).collect()
 }
 
-// Index source
+/// Index source
 struct InputSource {
+    /// The input 'string' (the haystack we want to look in)
     haystack: Vec<char>,
+
+    /// The `haystack`, but indexed
     indexed_haystack: HashMap<char, Vec<usize>>,
 }
 
+/// Index the chars in `input`.
 fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
     let mut indexed_haystack = HashMap::new();
     for (idx, &c) in input.iter().enumerate() {
@@ -50,6 +54,7 @@ fn index_chars(input: &Vec<char>) -> HashMap<char, Vec<usize>> {
 }
 
 impl InputSource {
+    /// Create & Return a new InputSource based on this input haystack
     fn new(haystack: Vec<char>) -> InputSource {
         let indexed_haystack = index_chars(&haystack);
 
@@ -67,6 +72,7 @@ impl InputSource {
         EDS::new(self, needle)
     }
 
+    /// Length of the input source
     fn source_len(&self) -> usize {
         self.haystack.len()
     }
@@ -74,16 +80,21 @@ impl InputSource {
 
 // This is a struct for doing the searching
 struct EDS<'a, 'b> {
+    /// Input source that's used
     source: &'a InputSource,
 
-    // String to search for
+    /// String to search for
     needle: &'b Vec<char>,
 
+    /// Vec of indexes, within source's haystack, of the first letter of the key
     first_poses: Vec<usize>,
+
+    /// Vec of indexes, within source's haystack, of the second letter of the key
     second_poses: Vec<usize>,
 
-    // keep track of state between runs
+    /// Which index within `first_poses` are we at?
     first_poses_idx: usize,
+    /// Which index within `second_poses` are we at?
     second_poses_idx: usize,
 
     
@@ -168,6 +179,8 @@ impl<'a, 'b> Iterator for EDS<'a, 'b> {
 
 
 impl<'a, 'b> EDS<'a, 'b> {
+    /// Given a `source` and `needle` to search for, return something that'll search for that. If
+    /// needle is <3 char long, it returns None
     fn new(source: &'a InputSource, needle: &'b Vec<char>) -> Option<EDS<'a, 'b>> {
         if needle.len() < 3 {
             return None;
